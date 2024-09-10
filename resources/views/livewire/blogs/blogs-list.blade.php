@@ -15,9 +15,10 @@
         @foreach ($blogs as $blog)
         <div class="bg-gray-100 shadow-md sm:rounded-lg p-4 mt-4 border">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-medium text-gray-900">
+                <a href="/blog/{{ $blog->id }}"
+                    class="text-lg font-medium text-gray-900">
                     {{ $blog->title }}
-                </h2>
+                </a>
                 <x-dropdown align="left" width="48">
                     <x-slot name="trigger">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-vertical cursor-pointer">

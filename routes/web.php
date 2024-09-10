@@ -12,4 +12,8 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
-require __DIR__.'/auth.php';
+Route::view('blog/{id}', 'blog')
+    ->middleware(['auth'])
+    ->name('blog');
+
+require __DIR__ . '/auth.php';
