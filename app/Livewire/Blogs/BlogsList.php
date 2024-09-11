@@ -5,6 +5,7 @@ namespace App\Livewire\Blogs;
 use App\Models\Blog;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class BlogsList extends Component
 {
@@ -20,7 +21,13 @@ class BlogsList extends Component
 
     public function mount()
     {
-        $this->blogs = Auth::user()->blogs()->orderBy('created_at', 'desc')->get();
+        $this->blogs = Blog::all()->reverse();
+    }
+
+    #[On('blog-updated')]
+    public function refreshBlogs()
+    {
+        $this->blogs = Blog::all()->reverse();
     }
 
     public function createBlog()
@@ -38,7 +45,7 @@ class BlogsList extends Component
         $this->title = '';
         $this->content = '';
 
-        $this->blogs = Auth::user()->blogs()->orderBy('created_at', 'desc')->get();
+        $this->dispatch('blog-updated');
         $this->dispatch('close-modal', 'create-blog');
     }
 
@@ -57,15 +64,12 @@ class BlogsList extends Component
             'editingContent' => 'required|min:10',
         ]);
 
-        $blog = Blog::find($this->editingBlogId);
+        $blog = Auth::user()->blogs()->where('id', $this->editingBlogId)->first();
         $blog->title = $this->editingTitle;
         $blog->content = $this->editingContent;
         $blog->save();
 
-        $this->editingBlogId = null;
-        $this->editingTitle = '';
-        $this->editingContent = '';
-        $this->blogs = Auth::user()->blogs()->orderBy('created_at', 'desc')->get();
+        $this->dispatch('blog-updated');
         $this->dispatch('close-modal', 'edit-blog');
     }
 
@@ -77,9 +81,8 @@ class BlogsList extends Component
     public function deleteBlog()
     {
         Auth::user()->blogs()->where('id', $this->deletingBlogId)->delete();
-        $this->blogs = Auth::user()->blogs()->orderBy('created_at', 'desc')->get();
+        $this->dispatch('blog-updated');
     }
-
 
     public function render()
     {

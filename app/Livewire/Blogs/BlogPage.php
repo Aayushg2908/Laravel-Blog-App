@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Blogs;
 
+use App\Models\Blog;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -15,7 +16,7 @@ class BlogPage extends Component
 
     public function mount()
     {
-        $blog = Auth::user()->blogs()->where("id", $this->id)->first();
+        $blog = Blog::find($this->id);
         $this->blog = $blog;
         $this->editingTitle = $blog->title;
         $this->editingContent = $blog->content;
@@ -28,7 +29,6 @@ class BlogPage extends Component
             'editingContent' => 'required|min:10',
         ]);
 
-        $blog = Auth::user()->blogs()->where('id', $this->id)->first();
         $this->blog->title = $this->editingTitle;
         $this->blog->content = $this->editingContent;
         $this->blog->save();
@@ -37,7 +37,7 @@ class BlogPage extends Component
 
     public function deleteBlog()
     {
-        $blog = Auth::user()->blogs()->where("id", $this->id)->first();
+        $blog = Auth::user()->blogs()->find($this->id);
         $blog->delete();
         $this->redirect(route('dashboard', absolute: false), navigate: true);
     }

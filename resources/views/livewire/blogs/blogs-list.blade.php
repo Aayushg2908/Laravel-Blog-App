@@ -19,6 +19,7 @@
                     class="text-lg font-medium text-gray-900">
                     {{ $blog->title }}
                 </a>
+                @if (auth()->user()->id === $blog->user_id)
                 <x-dropdown align="left" width="48">
                     <x-slot name="trigger">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-vertical cursor-pointer">
@@ -49,6 +50,7 @@
                         </div>
                     </x-slot>
                 </x-dropdown>
+                @endif
             </div>
             <p class="mt-2 text-gray-600">
                 {{ $blog->content }}

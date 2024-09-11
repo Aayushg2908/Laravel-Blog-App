@@ -3,10 +3,13 @@
         <h1 class="text-xl font-semibold">{{$blog->title}}</h1>
         <p class="mt-2">{{$blog->content}}</p>
     </div>
+
+    @if (auth()->user() && auth()->user()->id === $blog->user_id)
     <div class="mt-4 flex items-center gap-4 justify-center">
         <x-secondary-button x-on:click.prevent="$dispatch('open-modal', 'edit-blog')">Edit Blog</x-secondary-button>
         <x-danger-button x-on:click.prevent="$dispatch('open-modal', 'delete-blog')">Delete Blog</x-danger-button>
     </div>
+    @endif
 
     <x-modal name="edit-blog" focusable>
         <form wire:submit.prevent="updateBlog" class="p-6">
