@@ -2,6 +2,9 @@
 
 namespace App\Livewire\Blogs;
 
+use App\Events\BlogCreated;
+use App\Events\BlogDeleted;
+use App\Events\BlogUpdated;
 use App\Models\Blog;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -24,10 +27,27 @@ class BlogsList extends Component
         $this->blogs = Blog::all()->reverse();
     }
 
-    #[On('blog-updated')]
-    public function refreshBlogs()
+    #[On('echo:blog-created,BlogCreated')]
+    public function blogCreated($payload)
     {
-        $this->blogs = Blog::all()->reverse();
+        $newBlog = Blog::find($payload['blog']['id']);
+        $this->blogs->prepend($newBlog);
+    }
+
+    #[On('echo:blog-updated,BlogUpdated')]
+    public function blogUpdated($payload)
+    {
+        $this->blogs = $this->blogs->map(function ($blog) use ($payload) {
+            return $blog->id === $payload['blog']['id'] ? Blog::find($payload['blog']['id']) : $blog;
+        });
+    }
+
+    #[On('echo:blog-deleted,BlogDeleted')]
+    public function blogDeleted($payload)
+    {
+        $this->blogs = $this->blogs->filter(function ($blog) use ($payload) {
+            return $blog->id !== $payload['blogId'];
+        });
     }
 
     public function createBlog()
@@ -37,7 +57,7 @@ class BlogsList extends Component
             'content' => 'required|min:10',
         ]);
 
-        Auth::user()->blogs()->create([
+        $blog = Auth::user()->blogs()->create([
             'title' => $this->title,
             'content' => $this->content,
         ]);
@@ -45,7 +65,7 @@ class BlogsList extends Component
         $this->title = '';
         $this->content = '';
 
-        $this->dispatch('blog-updated');
+        BlogCreated::dispatch($blog);
         $this->dispatch('close-modal', 'create-blog');
     }
 
@@ -69,6 +89,7 @@ class BlogsList extends Component
         $blog->content = $this->editingContent;
         $blog->save();
 
+        BlogUpdated::dispatch($blog);
         $this->dispatch('blog-updated');
         $this->dispatch('close-modal', 'edit-blog');
     }
@@ -81,6 +102,7 @@ class BlogsList extends Component
     public function deleteBlog()
     {
         Auth::user()->blogs()->where('id', $this->deletingBlogId)->delete();
+        BlogDeleted::dispatch($this->deletingBlogId);
         $this->dispatch('blog-updated');
     }
 
