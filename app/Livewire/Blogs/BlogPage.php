@@ -4,7 +4,11 @@ namespace App\Livewire\Blogs;
 
 use App\Events\BlogDeleted;
 use App\Events\BlogUpdated;
+use App\Events\CommentCreated;
+use App\Events\CommentDeleted;
+use App\Events\CommentUpdated;
 use App\Models\Blog;
+use App\Models\Comment;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -50,6 +54,30 @@ class BlogPage extends Component
         }
     }
 
+    #[On('echo:comment-created,CommentCreated')]
+    public function commentCreated($payload)
+    {
+        $comment = $this->blog->comments()->find($payload['comment']['id']);
+        $this->comments->prepend($comment);
+    }
+
+    #[On('echo:comment-deleted,CommentDeleted')]
+    public function commentDeleted($payload)
+    {
+        $commentId = $payload['commentId'];
+        $this->comments = $this->comments->filter(function($comment) use ($commentId) {
+            return $comment->id != $commentId;
+        });
+    }
+
+    #[On('echo:comment-updated,CommentUpdated')]
+    public function commentUpdated($payload)
+    {
+        $this->comments = $this->comments->map(function($c) use ($payload) {
+            return $c->id === $payload['comment']['id'] ? Comment::find($payload['comment']['id']) : $c;
+        });
+    }
+
     public function updateBlog()
     {
         $this->validate([
@@ -78,13 +106,13 @@ class BlogPage extends Component
             'comment' => 'required|min:5',
         ]);
 
-        $this->blog->comments()->create([
+        $comment = $this->blog->comments()->create([
             'user_id' => Auth::id(),
             'content' => $this->comment,
         ]);
 
-        $this->comments = $this->blog->comments()->latest()->get();
         $this->comment = '';
+        CommentCreated::dispatch($comment);
     }
 
     public function confirmEdit($commentId)
@@ -103,7 +131,7 @@ class BlogPage extends Component
         $comment = $this->blog->comments()->find($this->commentId);
         $comment->content = $this->editingCommentContent;
         $comment->save();
-        $this->comments = $this->blog->comments()->latest()->get();
+        CommentUpdated::dispatch($comment);
         $this->dispatch('close-modal', 'edit-comment');
     }
 
@@ -116,7 +144,7 @@ class BlogPage extends Component
     {
         $comment = $this->blog->comments()->find($this->commentId);
         $comment->delete();
-        $this->comments = $this->blog->comments()->latest()->get();
+        CommentDeleted::dispatch($this->commentId);
     }
 
     public function render()
