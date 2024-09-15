@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Blogs;
 
+use App\Events\BlogDeleted;
+use App\Events\BlogUpdated;
 use App\Models\Blog;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class BlogPage extends Component
@@ -21,10 +24,30 @@ class BlogPage extends Component
     public function mount()
     {
         $blog = Blog::find($this->id);
+        if(!$blog) {
+            $this->redirect(route('dashboard', absolute: false), navigate: true);
+            return;
+        }
         $this->blog = $blog;
         $this->editingTitle = $blog->title;
         $this->editingContent = $blog->content;
         $this->comments = $blog->comments()->latest()->get();
+    }
+
+    #[On('echo:blog-updated,BlogUpdated')]
+    public function blogUpdated($payload)
+    {
+        $this->editingTitle = $payload['blog']['title'];
+        $this->editingContent = $payload['blog']['content'];
+    }
+
+    #[On('echo:blog-deleted,BlogDeleted')]
+    public function blogDeleted($payload)
+    {
+        $blogId = $payload['blogId'];
+        if($this->blog->id == $blogId) {
+            $this->redirect(route('dashboard', absolute: false), navigate: true);
+        }
     }
 
     public function updateBlog()
@@ -37,6 +60,7 @@ class BlogPage extends Component
         $this->blog->title = $this->editingTitle;
         $this->blog->content = $this->editingContent;
         $this->blog->save();
+        BlogUpdated::dispatch($this->blog);
         $this->dispatch('close-modal', 'edit-blog');
     }
 
@@ -44,6 +68,7 @@ class BlogPage extends Component
     {
         $blog = Auth::user()->blogs()->find($this->id);
         $blog->delete();
+        BlogDeleted::dispatch($this->id);
         $this->redirect(route('dashboard', absolute: false), navigate: true);
     }
 
